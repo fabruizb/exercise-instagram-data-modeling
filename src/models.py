@@ -1,23 +1,78 @@
 import os
 import sys
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Boolean
 from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy import create_engine
 from eralchemy2 import render_er
+
+
 
 Base = declarative_base()
 
 class Person(Base):
     __tablename__ = 'person'
-    # Here we define columns for the table person
-    # Notice that each column is also a normal Python instance attribute.
     id = Column(Integer, primary_key=True)
-    name = Column(String(250), nullable=False)
+    username = Column(String(50), unique=True, nullable=False)
+    email = Column(String(100), unique=True, nullable=False)
+    password = Column(String(100), nullable=False)
+    full_name = Column(String(100))
+    profile_picture = Column(String(200))
+    bio = Column(String(300))
+    is_verified = Column(Boolean, default=False)
+    
+    posts = relationship("Post", back_populates="usuario")
+    followers = relationship("Seguidor", foreign_keys='Seguidor.usuario_id')
+    following = relationship("Seguidor", foreign_keys='Seguidor.seguido_id')
+
+class Post(Base):
+    __tablename__ = 'post'
+    
+    id = Column(Integer, primary_key=True)
+    caption = Column(String(500))
+    image_url = Column(String(300), nullable=False)
+    created_at = Column(DateTime)
+    usuario_id = Column(Integer, ForeignKey('usuario.id'))
+    
+    usuario = relationship("Usuario", back_populates="posts")
+    comments = relationship("Comentario", back_populates="post")
+    likes = relationship("Like", back_populates="post")
+
+class Comentario(Base):
+    __tablename__ = 'comentario'
+    
+    id = Column(Integer, primary_key=True)
+    content = Column(String(300), nullable=False)
+    created_at = Column(DateTime)
+    usuario_id = Column(Integer, ForeignKey('usuario.id'))
+    post_id = Column(Integer, ForeignKey('post.id'))
+    
+    post = relationship("Post", back_populates="comments")
+    usuario = relationship("Usuario")
+
+class Like(Base):
+    __tablename__ = 'like'
+    
+    id = Column(Integer, primary_key=True)
+    usuario_id = Column(Integer, ForeignKey('usuario.id'))
+    post_id = Column(Integer, ForeignKey('post.id'))
+    
+    post = relationship("Post", back_populates="likes")
+    usuario = relationship("Usuario")
+
+class Seguidor(Base):
+    __tablename__ = 'seguidor'
+    
+    id = Column(Integer, primary_key=True)
+    usuario_id = Column(Integer, ForeignKey('usuario.id'))
+    seguido_id = Column(Integer, ForeignKey('usuario.id'))
+    
+    usuario = relationship("Usuario", foreign_keys=[usuario_id])
+    seguido = relationship("Usuario", foreign_keys=[seguido_id])
+
 
 class Address(Base):
     __tablename__ = 'address'
-    # Here we define columns for the table address.
-    # Notice that each column is also a normal Python instance attribute.
+    
     id = Column(Integer, primary_key=True)
     street_name = Column(String(250))
     street_number = Column(String(250))
